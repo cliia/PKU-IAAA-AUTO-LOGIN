@@ -62,7 +62,7 @@ PKU-IAAA-AUTO-LOGIN/
 ├── popup.html             # 弹窗界面
 ├── popup.js               # 弹窗逻辑
 ├── iaaa.js                # 核心自动登录脚本
-├── jquery-1.10.2.min.js   # jQuery库
+├── jquery-3.7.1.min.js    # jQuery库
 ├── bootstrap.css          # Bootstrap样式
 ├── Toggle-Switch.css      # 开关组件样式
 ├── icon*.png              # 扩展图标
@@ -95,6 +95,7 @@ PKU-IAAA-AUTO-LOGIN/
 - 🐛 修复自动登录功能在新版本Chrome中的兼容性问题
 - 💄 优化用户界面，增强用户体验
 - 📝 完善中文文档和注释
+- 🔒 增强错误处理和安全检查机制
 - 🗑️ 移除不再使用的course和mail功能，专注核心功能
 
 

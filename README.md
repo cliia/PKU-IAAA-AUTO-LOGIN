@@ -46,7 +46,7 @@ PKU-IAAA-AUTO-LOGIN/
 ├── iaaa.js                # 核心自动登录脚本
 ├── crypto-utils.js        # 密码加密工具
 ├── jquery-3.7.1.min.js    # jQuery库
-├── bootstrap.min.css      # Bootstrap样式（压缩版）
+├── bootstrap.min.css      # Bootstrap样式
 ├── Toggle-Switch.css      # 开关组件样式
 ├── icon*.png              # 扩展图标
 └── pic/                   # 文档图片
@@ -68,10 +68,5 @@ PKU-IAAA-AUTO-LOGIN/
 - 加密后的密码存放在 chrome.storage.sync 中，便于同步；因密钥不随之同步，换设备后需重新保存一次密码。
 - 彻底移除：点击“清除”，并可在浏览器设置中清理“站点数据/扩展数据”。
 
-## 版本变更
-- 2025-10-04：小修，补充扩展页 CSP，增加加密工具防御性初始化。
-
-
 ## 参考
-
 本项目基于 "Cyberoam Auto Login" 开发

@@ -3,9 +3,12 @@
  * 版本: 2.0
  * 功能：管理用户凭据和自动登录设置
  * 兼容: Manifest V3
+ * 安全特性：使用 AES-GCM 加密存储密码
  */
 
 console.log("PKU IAAA 弹窗脚本已加载");
+
+// 加密工具实例将由 crypto-utils.js 提供
 
 /**
  * 通用的按钮状态管理函数
@@ -147,19 +150,69 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * 加载当前设置并更新UI
+ * 加载当前设置并更新UI（支持密码解密显示和自动升级）
  */
-function loadCurrentSettings() {
-    chrome.storage.sync.get(["use_login", "username"], function(items) {
+async function loadCurrentSettings() {
+    chrome.storage.sync.get(["use_login", "username", "password", "_passwordEncrypted"], async function(items) {
         if (chrome.runtime.lastError) {
             console.error("加载设置失败:", chrome.runtime.lastError);
             showMessage("加载设置失败，请重试", "error");
             return;
         }
         
-        console.log("当前设置:", items);
+        console.log("当前设置:", { ...items, password: items.password ? "[已保护]" : undefined });
+        
+        // 检查是否需要升级密码加密
+        if (items.password && items.password !== "N" && !items._passwordEncrypted) {
+            console.log("检测到未加密的密码，正在自动升级...");
+            try {
+                await upgradePasswordEncryption(items.password, items.username, items.use_login);
+                showMessage("密码安全升级完成", "info", 2000);
+                // 重新加载设置
+                setTimeout(() => loadCurrentSettings(), 100);
+                return;
+            } catch (error) {
+                console.error("密码升级失败:", error);
+                showMessage("密码安全升级失败", "warning", 3000);
+            }
+        }
+        
         updateUIBasedOnSettings(items);
     });
+}
+
+/**
+ * 升级现有明文密码为加密密码
+ * @param {string} plainPassword - 明文密码
+ * @param {string} username - 用户名
+ * @param {string} useLogin - 登录状态
+ */
+async function upgradePasswordEncryption(plainPassword, username, useLogin) {
+    try {
+        console.log("开始升级密码加密...");
+        const encryptedPassword = await window.passwordCrypto.encryptPassword(plainPassword);
+        
+        // 更新存储
+        await new Promise((resolve, reject) => {
+            chrome.storage.sync.set({
+                'username': username,
+                'password': encryptedPassword,
+                'use_login': useLogin,
+                '_passwordEncrypted': true
+            }, function() {
+                if (chrome.runtime.lastError) {
+                    reject(chrome.runtime.lastError);
+                } else {
+                    resolve();
+                }
+            });
+        });
+        
+        console.log("密码加密升级完成");
+    } catch (error) {
+        console.error("密码升级失败:", error);
+        throw error;
+    }
 }
 
 /**
@@ -204,9 +257,9 @@ function updateClearButton(button, enabled) {
 }
 
 /**
- * 保存配置信息
+ * 保存配置信息（支持密码加密）
  */
-function saveConfig() {
+async function saveConfig() {
     console.log("============ 保存配置函数被调用 ============");
     console.log("Storage 支持检查:", typeof(Storage));
     
@@ -253,26 +306,57 @@ function saveConfig() {
     const saveButton = document.getElementById("clickme_save");
     setButtonState(saveButton, true, "保存中...");
 
-    // 保存到Chrome存储
-    chrome.storage.sync.set({
-        'username': username, 
-        'password': password, 
-        "use_login": "Y"
-    }, function() {
-        // 恢复按钮状态
-        setButtonState(saveButton, false, null, "更新");
-        
-        if (chrome.runtime.lastError) {
-            console.error('保存设置时出错:', chrome.runtime.lastError);
-            showMessage("保存失败，请重试", "error");
-        } else {
-            console.log('设置已成功保存');
-            showMessage("配置保存成功！自动登录已启用", "success");
+    try {
+        // 加密密码
+        console.log("正在加密密码...");
+        const encryptedPassword = await window.passwordCrypto.encryptPassword(password);
+        console.log("密码加密完成");
+
+        // 保存到Chrome存储（密码已加密）
+        chrome.storage.sync.set({
+            'username': username, 
+            'password': encryptedPassword, 
+            'use_login': "Y",
+            '_passwordEncrypted': true // 标记密码已加密
+        }, function() {
+            // 恢复按钮状态
+            setButtonState(saveButton, false, null, "更新");
             
-            // 更新界面状态
-            updateUIAfterSave();
+            if (chrome.runtime.lastError) {
+                console.error('保存设置时出错:', chrome.runtime.lastError);
+                showMessage("保存失败，请重试", "error");
+            } else {
+                console.log('设置已成功保存（密码已加密）');
+                showMessage("配置保存成功！自动登录已启用（密码已安全加密）", "success");
+                
+                // 更新界面状态
+                updateUIAfterSave();
+            }
+        });
+        
+    } catch (error) {
+        console.error('密码加密失败:', error);
+        setButtonState(saveButton, false, null, "保存");
+        
+        // 提供更详细的错误信息
+        let errorMessage = "密码加密失败，请重试";
+        
+        // 根据实际错误类型提供更准确的提示
+        if (error.name === 'NotSupportedError' || 
+            (error.message && error.message.includes('subtle')) ||
+            typeof crypto === 'undefined' || 
+            typeof crypto.subtle === 'undefined') {
+            errorMessage = "浏览器不支持加密功能，请升级到Chrome 88+或使用HTTPS访问";
+        } else if (error.message && (error.message.includes('密钥') || error.message.includes('初始化'))) {
+            errorMessage = "加密密钥初始化失败，请清理浏览器数据后重试";
+        } else if (error.message && error.message.includes('存储')) {
+            errorMessage = "存储空间不足，请清理浏览器数据";
+        } else if (error.name === 'QuotaExceededError') {
+            errorMessage = "存储配额已满，请清理浏览器数据";
         }
-    });
+        
+        showMessage(errorMessage, "error");
+    }
 }
 
 /**
@@ -310,7 +394,8 @@ function clearLogin() {
     chrome.storage.sync.set({
         'username': "N", 
         'password': "N", 
-        'use_login': "N"
+        'use_login': "N",
+        '_passwordEncrypted': false
     }, function() {
         if (chrome.runtime.lastError) {
             console.error('清除设置时出错:', chrome.runtime.lastError);

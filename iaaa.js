@@ -9,7 +9,7 @@
 console.log("PKU IAAA 自动登录脚本已加载");
 
 // 从Chrome存储中获取用户设置并执行自动登录
-chrome.storage.sync.get(['username', 'password', "use_login"], function(items) {
+chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypted"], async function(items) {
     // 检查Chrome存储API调用是否成功
     if (chrome.runtime.lastError) {
         console.error("获取存储数据失败:", chrome.runtime.lastError);
@@ -18,13 +18,41 @@ chrome.storage.sync.get(['username', 'password', "use_login"], function(items) {
     
     console.log("自动登录设置:", {
         enabled: items["use_login"],
-        hasUsername: !!items["username"] && items["username"] !== "N"
+        hasUsername: !!items["username"] && items["username"] !== "N",
+        passwordEncrypted: items["_passwordEncrypted"]
     });
     
     // 检查是否启用自动登录且用户名密码已设置
     if (items["use_login"] === "Y" && items["username"] !== "N" && items["username"] !== undefined) {
         console.log("开始执行自动登录流程");
-        initAutoLogin(items);
+        
+        try {
+            // 处理密码解密
+            let credentials = { ...items };
+            
+            if (items["_passwordEncrypted"] && items["password"]) {
+                console.log("检测到加密密码，正在解密...");
+                
+                // 等待加密工具初始化
+                if (typeof window.passwordCrypto === 'undefined') {
+                    window.passwordCrypto = new PasswordCrypto();
+                }
+                
+                credentials["password"] = await window.passwordCrypto.decryptPassword(items["password"]);
+                console.log("密码解密成功");
+            } else if (items["password"] && items["password"] !== "N") {
+                console.log("使用未加密密码（向后兼容）");
+                // 向后兼容：如果密码未加密，直接使用
+                credentials["password"] = items["password"];
+            }
+            
+            initAutoLogin(credentials);
+            
+        } catch (error) {
+            console.error("密码解密失败:", error);
+            console.log("自动登录失败：无法解密密码");
+        }
+        
     } else if (items["use_login"] === "N") {
         console.log("自动登录功能已禁用");
     } else {

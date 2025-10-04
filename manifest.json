@@ -24,7 +24,7 @@
    
    "content_scripts": [
       {
-         "js": ["jquery-3.7.1.min.js", "iaaa.js"],
+         "js": ["crypto-utils.js", "jquery-3.7.1.min.js", "iaaa.js"],
          "matches": ["https://iaaa.pku.edu.cn/*"],
          "run_at": "document_end",
          "all_frames": false

@@ -1,30 +1,49 @@
 {
-   "browser_action": {
-      "default_icon": "icon.png",
-      "default_popup": "popup.html"
+   "manifest_version": 3,
+   "name": "PKU IAAA 自动登录",
+   "version": "2.0",
+   "description": "北京大学统一身份认证(IAAA)自动登录插件，支持普通登录、短信验证、OTP认证等多种方式，只需保存一次账号信息即可享受便捷的自动登录体验",
+   "author": "PKU IAAA Auto Login Team",
+   "homepage_url": "https://github.com/cliia/PKU-IAAA-AUTO-LOGIN",
+   
+   "action": {
+      "default_icon": {
+         "16": "icon16.png",
+         "48": "icon48.png",
+         "128": "icon128.png"
+      },
+      "default_popup": "popup.html",
+      "default_title": "PKU IAAA 自动登录设置"
    },
-   "content_scripts": [ {
-       "js" : [ "jquery-1.10.2.min.js", "iaaa.js" ],
-       "matches": [ "https://iaaa.pku.edu.cn/*"]
-   } ,
-   {
-      "js" : [ "course.js" ],
-      "matches": [ "https://course.pku.edu.cn/*","https://courses.pku.edu.cn/*"]
-   } ,
-   {
-      "js" : [ "mail.js" ],
-      "matches": [ "https://mail.pku.edu.cn/"]
-   }
-],
-   "description": "Automatic PKU-IAAA login. Just you need to save it once in the Popup and leave it on the extension.",
+   
    "icons": {
-      "128": "icon128.png",
-      "16": "icon.png",
-      "48": "icon48.png"
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
    },
-   "manifest_version": 2,
-   "name": "PKU IAAA Auto Login",
-   "permissions": [ "storage" ],
-   "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.4"
+   
+   "content_scripts": [
+      {
+         "js": ["jquery-1.10.2.min.js", "iaaa.js"],
+         "matches": ["https://iaaa.pku.edu.cn/*"],
+         "run_at": "document_end",
+         "all_frames": false
+      }
+   ],
+   
+   "permissions": [
+      "storage"
+   ],
+   
+   "host_permissions": [
+      "https://iaaa.pku.edu.cn/*"
+   ],
+   
+   "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'"
+   },
+   
+   "minimum_chrome_version": "88",
+   
+   "update_url": "https://clients2.google.com/service/update2/crx"
 }

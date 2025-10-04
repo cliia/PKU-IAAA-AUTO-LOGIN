@@ -1,33 +1,103 @@
-# PKU-IAAA-AUTO-LOGIN
+# PKU IAAA 自动登录插件
 
-## 中文版本介绍
-![image](https://github.com/startkkkkkk/PKU-IAAA-AUTO-LOGIN/blob/master/pic/screenshot.png)
-自动登录北京大学身份验证网站，包括课程网，选课网，门户网...
+![演示截图](pic/screenshot.png)
 
-#### 如何使用
-- 从下述网站安装该扩展 [https://chrome.google.com/webstore/detail/pku-iaaa-auto-login/nhkdjckmpfgpmlclnnfkchgleckdmjcj](https://chrome.google.com/webstore/detail/pku-iaaa-auto-login/nhkdjckmpfgpmlclnnfkchgleckdmjcj)。
-- 点击谷歌浏览器右上角的新加北大Logo。
-- 输入北大账号的用户名密码。
-- 点击"Save"开始体验自动登录IAAA网页。
+## 简介
 
-#### 支持如下操作:
-- "Clear": 清楚本地存储的用户名密码并停止自动登录.
-- "AutoLogin": 开始/停止自动登录.
+北京大学统一身份认证(IAAA)自动登录浏览器插件，支持自动填写用户名密码并处理多种认证方式，让你轻松访问需要IAAA认证的网站。
+
+### 主要特性
+
+- 🚀 **智能自动登录** - 自动检测认证方式并完成登录流程
+- 🔐 **安全存储** - 本地安全存储用户凭据
+- 📱 **多种认证支持** - 支持普通登录、短信验证、OTP认证
+- 🎛️ **便捷控制** - 一键开启/关闭自动登录功能
+- 🌐 **中文界面** - 完全中文化的用户界面
+
+### 支持的认证方式
+
+- **普通登录** - 仅用户名密码登录
+- **短信验证** - 自动发送验证码并提示输入
+- **OTP认证** - 支持手机App OTP验证
+- **图形验证码** - 在需要时提示用户输入
+
+## 安装与使用
+
+### 安装方法
+
+- 下载本项目到本地，并解压
+- 打开Chrome/Edge浏览器，进入 `chrome://extensions/`
+- 开启"开发者模式"
+- 点击"加载已解压的扩展程序"，选择项目文件夹
+
+### 使用指南
+
+#### 初次配置
+1. 点击浏览器工具栏中的北大Logo图标
+2. 在弹出窗口中输入你的北大账号用户名和密码
+3. 点击"保存"按钮
+4. 确保"自动登录"开关为开启状态
+
+#### 功能说明
+- **保存** - 保存用户凭据并启用自动登录
+- **更新** - 更新已保存的用户凭据（首次保存后显示）
+- **清除** - 清除所有保存的登录信息并关闭自动登录
+- **自动登录开关** - 在不删除凭据的情况下启用/禁用自动登录
+
+#### 使用流程
+1. 配置完成后，访问任何需要IAAA认证的网站
+2. 插件会自动填写用户名和密码
+3. 根据网站要求的认证方式自动处理：
+   - 普通登录：直接完成登录
+   - 短信验证：自动发送验证码，等待用户输入
+   - OTP认证：显示OTP输入框，等待用户输入
+4. 按提示完成剩余步骤即可成功登录
+
+## 技术信息
+
+### 项目结构
+```
+PKU-IAAA-AUTO-LOGIN/
+├── manifest.json          # 扩展清单文件
+├── popup.html             # 弹窗界面
+├── popup.js               # 弹窗逻辑
+├── iaaa.js                # 核心自动登录脚本
+├── jquery-1.10.2.min.js   # jQuery库
+├── bootstrap.css          # Bootstrap样式
+├── Toggle-Switch.css      # 开关组件样式
+├── icon*.png              # 扩展图标
+└── pic/                   # 文档图片
+    └── screenshot.png
+```
+
+### 支持的网站
+- 北京大学统一身份认证 (iaaa.pku.edu.cn)
+- 包括门户、教学网、选课网等
+
+### 浏览器兼容性
+- **Chrome 88+** (支持 Manifest V3)
+- **Microsoft Edge 88+** (支持 Manifest V3)
+- **其他基于 Chromium 的现代浏览器**
+
+**重要提示**: 
+- 本插件已全面升级到 Manifest V3，确保长期兼容性
+- 推荐使用最新版本的 Chrome 浏览器以获得最佳体验
+- 旧版本浏览器可能不支持某些新特性
+
+## 更新日志
+
+### v2.0 (2025年10月)
+- 🚀 **重大升级**: 迁移到 Manifest V3，确保与未来浏览器版本兼容
+- 🛡️ 增强安全性和性能，符合最新扩展标准
+- 🔧 优化权限配置，增加 host_permissions 支持
+- 📱 改进扩展动作(action)配置，提供更好的用户体验
+- ✨ 全面重构代码，提升稳定性和可读性
+- 🐛 修复自动登录功能在新版本Chrome中的兼容性问题
+- 💄 优化用户界面，增强用户体验
+- 📝 完善中文文档和注释
+- 🗑️ 移除不再使用的course和mail功能，专注核心功能
 
 
-## Introduction
+## 参考
 
-Logging in iaaa.pku.edu.cn automatically. Including course, elective, portal ......
-
-#### How to use it
-- Install the extension from [https://chrome.google.com/webstore/detail/pku-iaaa-auto-login/nhkdjckmpfgpmlclnnfkchgleckdmjcj](https://chrome.google.com/webstore/detail/pku-iaaa-auto-login/nhkdjckmpfgpmlclnnfkchgleckdmjcj).
-- Click the PKU logo in the upper right of Chrome.
-- Input the username and password of your PKU account.
-- Click "Save" button to automatically login the IAAA authorized website.
-
-#### The following operations are allowed:
-- "Clean username and password": Delete them from your computer and stop auto-login.
-- "Autologin": Start/stop automatically login using saved username and password.
-
-## Reference
-The project is developed from "Cyberoam Auto Login"
+本项目基于 "Cyberoam Auto Login" 开发

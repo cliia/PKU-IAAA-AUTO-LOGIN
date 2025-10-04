@@ -1,123 +1,350 @@
 
-// console.log("Come to iaaa website!");
+/**
+ * PKU IAAA 自动登录脚本
+ * 版本: 2.0
+ * 功能: 自动填写用户名密码，处理多种认证方式（普通登录、短信验证、OTP验证）
+ * 兼容: Manifest V3
+ */
 
+console.log("PKU IAAA 自动登录脚本已加载");
 
-// var actualCode = `// Code here.
-// // If you want to use a variable, use $ and curly braces.
-// // For example, to use a fixed random number:
-// focusName();
-// // var evt = document.createEvent('Event');
-// // evt.initEvent('myCustomEvent', true, false);
-
-// // // fire the event
-// // document.dispatchEvent(evt);
-// // NOTE: Do not insert unsafe variables in this way, see below
-// // at "Dynamic values in the injected code"
-// `;
-
-// var script = document.createElement('script');
-// script.textContent = actualCode;
-// (document.head||document.documentElement).appendChild(script);
-// script.remove();
-
-
-// document.addEventListener('myCustomEvent', function() {
-//     // do whatever is necessary
-//     alert("111");
-//   });
-
+// 从Chrome存储中获取用户设置并执行自动登录
 chrome.storage.sync.get(['username', 'password', "use_login"], function(items) {
-    if(items["use_login"]=="Y"&&items["username"]!="N"&&items["username"]!=undefined){
-        document.getElementById("user_name").value = items["username"];
-        document.getElementById("password").value = items["password"];
-        // console.log(document.getElementById("appid").value);
-
-
-        $.getJSON('/iaaa/isMobileAuthen.do',
-        //{userName: name,_rand:Math.random()},
-        {userName: items["username"],appId: document.getElementById("appid").value ,_rand:Math.random()},
-        function(data) {
-            var json = data;           		
-            $("#msg").text("");
-            if(true===json.success){
-                /*if(true == json.isMobileAuthen){//OLD!
-                    $("#sms_area").show();
-                }*/
-                //add 201705
-                var isMobileAuthen = json.isMobileAuthen;//modi 201705 String 
-                var modeAuthen = json.authenMode;//modi 201705 String 
-                var isBind = json.isBind;//绑定状态 boolean
-                if(true==isMobileAuthen){
-                    // alert("AAA");
-                    if("OTP"===modeAuthen){
-                        $("#sms_area").hide();
-                        $("#otp_area").show();
-                        if(false===isBind){
-                            $("#msg").text("请先绑定手机App");
-                            $("#otp_button").show();
-                            $("#logon_button").hide();
-                        }
-                        else{
-                            $("#otp_button").hide();
-                            $("#logon_button").show();
-                        }
-                    }
-                    else if("SMS"===modeAuthen){
-                        $("#sms_area").show();
-                        $("#otp_area").hide();
-                        $("#otp_button").hide();
-                        $("#logon_button").show();
-                        location.href="javascript:sendSMSCode(); void 0";
-                        $("#sms_code").focus();
-                    }
-               }
-                else{
-                    $("#sms_area").hide();
-                    $("#otp_area").hide();
-                    $("#otp_button").hide();
-                    $("#logon_button").show();
-                    location.href="javascript:oauthLogon(); void 0";
-                }
-            }
-        })
-
-        // location.href="javascript:showOrHideSmsCode(); void 0";
-        // location.href="javascript:focusName(); void 0";
-
-        // setTimeout(() => { console.log($("#sms_area").is(":hidden")); }, 2000);
-
-        // console.log($("#sms_area:visible"));
-        // console.log("DDDDD");
-        // // console.log($("#sms_area:display"))
-        // // $("#sms_code").focus();;
-        console.log($("#sms_area:visible"));
-        console.log($("#sms_area").is(":hidden"));
-
-        // showOrHideSmsCode();
-
-        // console.log($("#sms_area:visible"));
-
-        // if($("#sms_area:visible").length>0){
-        //     console.log("SMS Login");
-        //     // location.href="javascript:focusName(); void 0";
-        //     // location.href="javascript:sendSMSCode(); void 0";
-        //     $("#sms_code").focus();
-        // }else if($("#otp_area:visible").length>0){
-        //     console.log("OTP Login");
-        //     $("#otp_code").focus();
-        // }else if($("#code_area:visible").length>0){
-        //     console.log("Code Login");
-        //     $("#valid_code").focus();
-        // }else{
-        //     console.log("Pure Login");
-        //     location.href="javascript:oauthLogon(); void 0";
-        // }
-    }else if(items["use_login"]=="N"){
-        console.log("Stop login");
+    // 检查Chrome存储API调用是否成功
+    if (chrome.runtime.lastError) {
+        console.error("获取存储数据失败:", chrome.runtime.lastError);
+        return;
     }
-    else{
-        console.log("use_login is not provided");
+    
+    console.log("自动登录设置:", {
+        enabled: items["use_login"],
+        hasUsername: !!items["username"] && items["username"] !== "N"
+    });
+    
+    // 检查是否启用自动登录且用户名密码已设置
+    if (items["use_login"] === "Y" && items["username"] !== "N" && items["username"] !== undefined) {
+        console.log("开始执行自动登录流程");
+        initAutoLogin(items);
+    } else if (items["use_login"] === "N") {
+        console.log("自动登录功能已禁用");
+    } else {
+        console.log("未配置自动登录信息");
     }
-    console.log($("#sms_area:visible"));
-
 });
+
+/**
+ * 初始化自动登录流程
+ * @param {Object} credentials 用户凭据
+ */
+function initAutoLogin(credentials) {
+    // 添加等待机制，确保页面元素加载完成
+    let attempts = 0;
+    const maxAttempts = 50; // 最多等待5秒 (50 * 100ms = 5000ms)
+    
+    function waitAndFillCredentials() {
+        const userNameEl = document.getElementById("user_name");
+        const passwordEl = document.getElementById("password");
+        
+        // 检查必要的DOM元素是否存在
+        if (userNameEl && passwordEl) {
+            console.log("页面元素加载完成，开始填写凭据");
+            fillCredentialsAndLogin(credentials, userNameEl, passwordEl);
+        } else if (attempts < maxAttempts) {
+            console.log(`等待页面元素加载... (${attempts + 1}/${maxAttempts})`);
+            attempts++;
+            // 如果元素还没加载，100ms后重试
+            setTimeout(waitAndFillCredentials, 100);
+        } else {
+            console.error("页面元素加载超时，自动登录失败");
+            // 可以在这里添加用户提示或其他错误处理
+        }
+    }
+    
+    // 开始等待并填充凭据
+    waitAndFillCredentials();
+}
+
+/**
+ * 填写用户凭据并处理登录
+ * @param {Object} credentials 用户凭据
+ * @param {HTMLElement} userNameEl 用户名输入框
+ * @param {HTMLElement} passwordEl 密码输入框
+ */
+function fillCredentialsAndLogin(credentials, userNameEl, passwordEl) {
+    try {
+        // 填写用户名和密码
+        userNameEl.value = credentials["username"];
+        passwordEl.value = credentials["password"];
+        
+        // 触发输入事件，确保网站能检测到值的变化
+        userNameEl.dispatchEvent(new Event('input', { bubbles: true }));
+        userNameEl.dispatchEvent(new Event('change', { bubbles: true }));
+        passwordEl.dispatchEvent(new Event('input', { bubbles: true }));
+        passwordEl.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        console.log("用户凭据填写完成");
+        
+        // 检查移动端认证状态并处理登录
+        checkAuthenticationStatus(credentials["username"]);
+        
+    } catch (error) {
+        console.error("填写凭据时发生错误:", error);
+    }
+}
+
+/**
+ * 检查认证状态并处理不同的登录方式
+ * @param {string} username 用户名
+ */
+function checkAuthenticationStatus(username) {
+    const appIdEl = document.getElementById("appid");
+    
+    if (!appIdEl) {
+        console.warn("未找到appid元素，尝试直接登录");
+        attemptDirectLogin();
+        return;
+    }
+    
+    const appId = appIdEl.value;
+    console.log("检查认证状态，AppID:", appId);
+    
+    // 调用IAAA接口检查移动端认证状态
+    $.getJSON('/iaaa/isMobileAuthen.do', {
+        userName: username,
+        appId: appId,
+        _rand: Math.random()
+    })
+    .done(function(data) {
+        console.log("认证状态检查结果:", data);
+        handleAuthenticationResponse(data);
+    })
+    .fail(function(xhr, status, error) {
+        // 详细的错误处理和用户友好的提示
+        const errorMessages = {
+            'timeout': '网络连接超时，正在尝试直接登录',
+            'error': '网络连接失败，正在尝试直接登录',
+            'parsererror': '服务器响应格式错误，正在尝试直接登录',
+            'abort': '请求被中断，正在尝试直接登录'
+        };
+        
+        const userMessage = errorMessages[status] || `网络请求失败(${status})，正在尝试直接登录`;
+        console.warn("认证状态检查失败:", { status, error, responseText: xhr.responseText });
+        console.log(userMessage);
+        
+        // 显示错误信息到页面（如果有错误显示区域）
+        const msgEl = document.getElementById("msg");
+        if (msgEl) {
+            msgEl.textContent = userMessage;
+            msgEl.style.color = "#ff6b6b";
+        }
+        
+        // 延迟后回退到直接登录模式，给用户时间看到错误信息
+        setTimeout(() => {
+            if (msgEl) {
+                msgEl.textContent = "";
+            }
+            attemptDirectLogin();
+        }, 2000);
+    });
+}
+
+/**
+ * 处理认证响应并执行相应的登录逻辑
+ * @param {Object} data 认证响应数据
+ */
+function handleAuthenticationResponse(data) {
+    // 清空错误信息
+    $("#msg").text("");
+    
+    if (data.success !== true) {
+        console.warn("认证检查未成功，尝试直接登录");
+        attemptDirectLogin();
+        return;
+    }
+    
+    const { isMobileAuthen, authenMode, isBind } = data;
+    console.log("认证模式:", { isMobileAuthen, authenMode, isBind });
+    
+    if (isMobileAuthen === true) {
+        handleMobileAuthentication(authenMode, isBind);
+    } else {
+        handleNormalLogin();
+    }
+}
+
+/**
+ * 处理移动端认证（OTP或SMS）
+ * @param {string} authenMode 认证模式
+ * @param {boolean} isBind 是否已绑定
+ */
+function handleMobileAuthentication(authenMode, isBind) {
+    if (authenMode === "OTP") {
+        handleOTPAuthentication(isBind);
+    } else if (authenMode === "SMS") {
+        handleSMSAuthentication();
+    } else {
+        console.warn("未知的移动认证模式:", authenMode);
+        attemptDirectLogin();
+    }
+}
+
+/**
+ * 处理OTP认证
+ * @param {boolean} isBind 是否已绑定手机App
+ */
+function handleOTPAuthentication(isBind) {
+    console.log("处理OTP认证，绑定状态:", isBind);
+    
+    // 安全检查DOM元素是否存在
+    const smsArea = $("#sms_area");
+    const otpArea = $("#otp_area");
+    const msgEl = $("#msg");
+    const otpButton = $("#otp_button");
+    const logonButton = $("#logon_button");
+    
+    if (smsArea.length) smsArea.hide();
+    if (otpArea.length) otpArea.show();
+    
+    if (isBind === false) {
+        if (msgEl.length) msgEl.text("请先绑定手机App");
+        if (otpButton.length) otpButton.show();
+        if (logonButton.length) logonButton.hide();
+        console.log("需要绑定手机App");
+    } else {
+        if (otpButton.length) otpButton.hide();
+        if (logonButton.length) logonButton.show();
+        // 自动聚焦到OTP输入框
+        setTimeout(() => {
+            const otpInput = $("#otp_code");
+            if (otpInput.length > 0) {
+                otpInput.focus();
+                console.log("OTP输入框已聚焦，等待用户输入验证码");
+            } else {
+                console.warn("未找到OTP输入框元素");
+            }
+        }, 300);
+    }
+}
+
+/**
+ * 处理SMS短信认证
+ */
+function handleSMSAuthentication() {
+    console.log("处理SMS短信认证");
+    
+    // 安全检查DOM元素是否存在
+    const smsArea = $("#sms_area");
+    const otpArea = $("#otp_area");
+    const otpButton = $("#otp_button");
+    const logonButton = $("#logon_button");
+    
+    if (smsArea.length) smsArea.show();
+    if (otpArea.length) otpArea.hide();
+    if (otpButton.length) otpButton.hide();
+    if (logonButton.length) logonButton.show();
+    
+    // 自动发送短信验证码
+    try {
+        if (typeof window.sendSMSCode === 'function') {
+            console.log("自动发送短信验证码");
+            window.sendSMSCode();
+        } else {
+            console.warn("未找到sendSMSCode函数");
+        }
+    } catch (error) {
+        console.error("发送短信验证码失败:", error);
+    }
+    
+    // 聚焦到短信验证码输入框
+    setTimeout(() => {
+        const smsInput = $("#sms_code");
+        if (smsInput.length > 0) {
+            smsInput.focus();
+            console.log("短信验证码输入框已聚焦，等待用户输入验证码");
+        } else {
+            console.warn("未找到短信验证码输入框元素");
+        }
+    }, 500);
+}
+
+/**
+ * 处理普通登录（无需额外验证）
+ */
+function handleNormalLogin() {
+    console.log("处理普通登录模式");
+    
+    // 安全检查DOM元素是否存在
+    const smsArea = $("#sms_area");
+    const otpArea = $("#otp_area");
+    const otpButton = $("#otp_button");
+    const logonButton = $("#logon_button");
+    
+    if (smsArea.length) smsArea.hide();
+    if (otpArea.length) otpArea.hide();
+    if (otpButton.length) otpButton.hide();
+    if (logonButton.length) logonButton.show();
+    
+    // 延迟执行登录以确保UI更新完成
+    setTimeout(() => {
+        attemptDirectLogin();
+    }, 200);
+}
+
+/**
+ * 尝试直接登录
+ */
+function attemptDirectLogin() {
+    console.log("尝试执行直接登录");
+    
+    try {
+        // 优先尝试调用页面的登录函数
+        if (typeof window.oauthLogon === 'function') {
+            console.log("调用oauthLogon函数");
+            window.oauthLogon();
+        } else {
+            // 如果函数不存在，尝试点击登录按钮
+            console.log("未找到oauthLogon函数，尝试点击登录按钮");
+            clickLoginButton();
+        }
+    } catch (error) {
+        console.error("执行登录时发生错误:", error);
+        // 错误回退：尝试点击按钮
+        clickLoginButton();
+    }
+}
+
+/**
+ * 点击登录按钮
+ */
+function clickLoginButton() {
+    setTimeout(() => {
+        // 按优先级查找登录按钮
+        const buttonSelectors = [
+            "#logon_button",
+            'input[type="submit"]',
+            'button[type="submit"]', 
+            '.btn-primary',
+            'input[value*="登录"]',
+            'button[text*="登录"]'
+        ];
+        
+        let loginBtn = null;
+        for (const selector of buttonSelectors) {
+            loginBtn = document.querySelector(selector);
+            if (loginBtn && !loginBtn.disabled && loginBtn.style.display !== 'none') {
+                break;
+            }
+        }
+        
+        if (loginBtn) {
+            console.log("找到并点击登录按钮:", loginBtn);
+            // 触发多种事件确保兼容性
+            loginBtn.dispatchEvent(new Event('click', { bubbles: true }));
+            loginBtn.click();
+        } else {
+            console.warn("未找到可用的登录按钮，可能需要用户手动操作");
+        }
+    }, 100);
+}
+
+

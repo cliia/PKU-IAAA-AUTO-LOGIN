@@ -42,7 +42,7 @@ class PasswordCrypto {
                 return key;
             }
         } catch (error) {
-            console.error('密钥生成或获取失败:', error);
+            console.error('Failed to generate or retrieve key:', error);
             throw new Error('加密密钥初始化失败');
         }
     }
@@ -75,7 +75,7 @@ class PasswordCrypto {
             
             return btoa(String.fromCharCode(...combined));
         } catch (error) {
-            console.error('密码加密失败:', error);
+            console.error('Password encryption failed:', error);
             throw new Error('密码加密失败');
         }
     }
@@ -108,7 +108,7 @@ class PasswordCrypto {
             const decoder = new TextDecoder();
             return decoder.decode(decrypted);
         } catch (error) {
-            console.error('密码解密失败:', error);
+            console.error('Password decryption failed:', error);
             throw new Error('密码解密失败');
         }
     }

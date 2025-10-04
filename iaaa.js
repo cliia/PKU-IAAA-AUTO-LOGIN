@@ -1,4 +1,4 @@
-console.log("PKU IAAA 自动登录脚本已加载");
+console.log("PKU IAAA auto-login script loaded.");
 
 // 设置 jQuery 全局 AJAX 配置（超时与不缓存），避免长时间挂起
 try {
@@ -6,18 +6,18 @@ try {
         $.ajaxSetup({ timeout: 8000, cache: false });
     }
 } catch (e) {
-    console.warn('设置 AJAX 超时失败: ', e);
+    console.warn('Failed to set AJAX timeout:', e);
 }
 
 // 从Chrome存储中获取用户设置并执行自动登录
 chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypted"], async function(items) {
     // 检查Chrome存储API调用是否成功
     if (chrome.runtime.lastError) {
-        console.error("获取存储数据失败:", chrome.runtime.lastError);
+        console.error("Failed to get storage items:", chrome.runtime.lastError);
         return;
     }
     
-    console.log("自动登录设置:", {
+    console.log("Auto-login settings:", {
         enabled: items["use_login"],
         hasUsername: !!items["username"] && items["username"] !== "N",
         passwordEncrypted: items["_passwordEncrypted"]
@@ -25,14 +25,14 @@ chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypte
     
     // 检查是否启用自动登录且用户名密码已设置
     if (items["use_login"] === "Y" && items["username"] !== "N" && items["username"] !== undefined) {
-        console.log("开始执行自动登录流程");
+    console.log("Starting auto-login flow...");
         
         try {
             // 处理密码解密
             let credentials = { ...items };
             
             if (items["_passwordEncrypted"] && items["password"]) {
-                console.log("检测到加密密码，正在解密...");
+                console.log("Encrypted password detected, decrypting...");
                 
                 // 等待加密工具初始化
                 if (typeof window.passwordCrypto === 'undefined') {
@@ -40,9 +40,9 @@ chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypte
                 }
                 
                 credentials["password"] = await window.passwordCrypto.decryptPassword(items["password"]);
-                console.log("密码解密成功");
+                console.log("Password decrypted successfully.");
             } else if (items["password"] && items["password"] !== "N") {
-                console.log("使用未加密密码（向后兼容）");
+                console.log("Using plaintext password (backward compatibility).");
                 // 向后兼容：如果密码未加密，直接使用
                 credentials["password"] = items["password"];
             }
@@ -50,14 +50,14 @@ chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypte
             initAutoLogin(credentials);
             
         } catch (error) {
-            console.error("密码解密失败:", error);
-            console.log("自动登录失败：无法解密密码");
+            console.error("Password decryption failed:", error);
+            console.log("Auto-login failed: unable to decrypt password.");
         }
         
     } else if (items["use_login"] === "N") {
-        console.log("自动登录功能已禁用");
+        console.log("Auto-login is disabled.");
     } else {
-        console.log("未配置自动登录信息");
+        console.log("Auto-login not configured.");
     }
 });
 
@@ -76,15 +76,15 @@ function initAutoLogin(credentials) {
         
         // 检查必要的DOM元素是否存在
         if (userNameEl && passwordEl) {
-            console.log("页面元素加载完成，开始填写凭据");
+            console.log("Form elements ready, filling credentials...");
             fillCredentialsAndLogin(credentials, userNameEl, passwordEl);
         } else if (attempts < maxAttempts) {
-            console.log(`等待页面元素加载... (${attempts + 1}/${maxAttempts})`);
+            console.log(`Waiting for form elements... (${attempts + 1}/${maxAttempts})`);
             attempts++;
             // 如果元素还没加载，100ms后重试
             setTimeout(waitAndFillCredentials, 100);
         } else {
-            console.error("页面元素加载超时，自动登录失败");
+            console.error("Timeout waiting for form elements, auto-login aborted.");
             // 可以在这里添加用户提示或其他错误处理
         }
     }
@@ -111,13 +111,13 @@ function fillCredentialsAndLogin(credentials, userNameEl, passwordEl) {
         passwordEl.dispatchEvent(new Event('input', { bubbles: true }));
         passwordEl.dispatchEvent(new Event('change', { bubbles: true }));
         
-        console.log("用户凭据填写完成");
+    console.log("Credentials filled.");
         
         // 检查移动端认证状态并处理登录
         checkAuthenticationStatus(credentials["username"]);
         
     } catch (error) {
-        console.error("填写凭据时发生错误:", error);
+    console.error("Error while filling credentials:", error);
     }
 }
 
@@ -129,13 +129,13 @@ function checkAuthenticationStatus(username) {
     const appIdEl = document.getElementById("appid");
     
     if (!appIdEl) {
-        console.warn("未找到appid元素，尝试直接登录");
+    console.warn("AppID element not found, attempting direct login.");
         attemptDirectLogin();
         return;
     }
     
     const appId = appIdEl.value;
-    console.log("检查认证状态，AppID:", appId);
+    console.log("Checking auth status, appId:", appId);
     
     // 调用IAAA接口检查移动端认证状态
     $.getJSON('/iaaa/isMobileAuthen.do', {
@@ -144,7 +144,7 @@ function checkAuthenticationStatus(username) {
         _rand: Math.random()
     })
     .done(function(data) {
-        console.log("认证状态检查结果:", data);
+    console.log("Auth status response:", data);
         handleAuthenticationResponse(data);
     })
     .fail(function(xhr, status, error) {
@@ -157,7 +157,7 @@ function checkAuthenticationStatus(username) {
         };
         
         const userMessage = errorMessages[status] || `网络请求失败(${status})，正在尝试直接登录`;
-        console.warn("认证状态检查失败:", { status, error, responseText: xhr.responseText });
+        console.warn("Auth status request failed:", { status, error, responseText: xhr.responseText });
         console.log(userMessage);
         
         // 显示错误信息到页面（如果有错误显示区域）
@@ -186,13 +186,13 @@ function handleAuthenticationResponse(data) {
     $("#msg").text("");
     
     if (data.success !== true) {
-        console.warn("认证检查未成功，尝试直接登录");
+    console.warn("Auth check unsuccessful, attempting direct login.");
         attemptDirectLogin();
         return;
     }
     
     const { isMobileAuthen, authenMode, isBind } = data;
-    console.log("认证模式:", { isMobileAuthen, authenMode, isBind });
+    console.log("Auth mode:", { isMobileAuthen, authenMode, isBind });
     
     if (isMobileAuthen === true) {
         handleMobileAuthentication(authenMode, isBind);
@@ -212,7 +212,7 @@ function handleMobileAuthentication(authenMode, isBind) {
     } else if (authenMode === "SMS") {
         handleSMSAuthentication();
     } else {
-        console.warn("未知的移动认证模式:", authenMode);
+        console.warn("Unknown mobile auth mode:", authenMode);
         attemptDirectLogin();
     }
 }
@@ -222,7 +222,7 @@ function handleMobileAuthentication(authenMode, isBind) {
  * @param {boolean} isBind 是否已绑定手机App
  */
 function handleOTPAuthentication(isBind) {
-    console.log("处理OTP认证，绑定状态:", isBind);
+    console.log("Handling OTP authentication, bind status:", isBind);
     
     // 安全检查DOM元素是否存在
     const smsArea = $("#sms_area");
@@ -238,7 +238,7 @@ function handleOTPAuthentication(isBind) {
         if (msgEl.length) msgEl.text("请先绑定手机App");
         if (otpButton.length) otpButton.show();
         if (logonButton.length) logonButton.hide();
-        console.log("需要绑定手机App");
+    console.log("Binding to mobile app required.");
     } else {
         if (otpButton.length) otpButton.hide();
         if (logonButton.length) logonButton.show();
@@ -247,9 +247,9 @@ function handleOTPAuthentication(isBind) {
             const otpInput = $("#otp_code");
             if (otpInput.length > 0) {
                 otpInput.focus();
-                console.log("OTP输入框已聚焦，等待用户输入验证码");
+                console.log("OTP input focused, awaiting user input.");
             } else {
-                console.warn("未找到OTP输入框元素");
+                console.warn("OTP input element not found.");
             }
         }, 300);
     }
@@ -259,7 +259,7 @@ function handleOTPAuthentication(isBind) {
  * 处理SMS短信认证
  */
 function handleSMSAuthentication() {
-    console.log("处理SMS短信认证");
+    console.log("Handling SMS authentication.");
     
     // 安全检查DOM元素是否存在
     const smsArea = $("#sms_area");
@@ -275,10 +275,10 @@ function handleSMSAuthentication() {
     // 自动发送短信验证码
     try {
         if (typeof window.sendSMSCode === 'function') {
-            console.log("自动发送短信验证码");
+            console.log("Sending SMS code automatically.");
             window.sendSMSCode();
         } else {
-            console.warn("未找到sendSMSCode函数，尝试点击页面上的发送验证码按钮");
+            console.warn("sendSMSCode function not found, trying to click a send-code button on page.");
             // 回退：尝试点击“发送验证码/获取验证码”按钮
             const candidates = Array.from(document.querySelectorAll('button, input[type="button"], a, .btn'));
             const sendBtn = candidates.find(el => {
@@ -286,17 +286,17 @@ function handleSMSAuthentication() {
                 return /发\s*送\s*验\s*证\s*码|获\s*取\s*验\s*证\s*码|send\s*code|get\s*code/i.test(text);
             });
             if (sendBtn) {
-                console.log('点击发送验证码按钮:', sendBtn);
+                console.log('Clicking send-code button:', sendBtn);
                 sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
                 sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
                 sendBtn.dispatchEvent(new Event('click', { bubbles: true }));
                 if (typeof sendBtn.click === 'function') sendBtn.click();
             } else {
-                console.warn('未找到可用的发送验证码按钮');
+                console.warn('No usable send-code button found.');
             }
         }
     } catch (error) {
-        console.error("发送短信验证码失败:", error);
+        console.error("Failed to send SMS code:", error);
     }
     
     // 聚焦到短信验证码输入框
@@ -304,9 +304,9 @@ function handleSMSAuthentication() {
         const smsInput = $("#sms_code");
         if (smsInput.length > 0) {
             smsInput.focus();
-            console.log("短信验证码输入框已聚焦，等待用户输入验证码");
+            console.log("SMS code input focused, awaiting user input.");
         } else {
-            console.warn("未找到短信验证码输入框元素");
+            console.warn("SMS code input element not found.");
         }
     }, 500);
 }
@@ -315,7 +315,7 @@ function handleSMSAuthentication() {
  * 处理普通登录（无需额外验证）
  */
 function handleNormalLogin() {
-    console.log("处理普通登录模式");
+    console.log("Handling normal login mode.");
     
     // 安全检查DOM元素是否存在
     const smsArea = $("#sms_area");
@@ -338,20 +338,20 @@ function handleNormalLogin() {
  * 尝试直接登录
  */
 function attemptDirectLogin() {
-    console.log("尝试执行直接登录");
+    console.log("Attempting direct login.");
     
     try {
         // 优先尝试调用页面的登录函数
         if (typeof window.oauthLogon === 'function') {
-            console.log("调用oauthLogon函数");
+            console.log("Calling oauthLogon()...");
             window.oauthLogon();
         } else {
             // 如果函数不存在，尝试点击登录按钮
-            console.log("未找到oauthLogon函数，尝试点击登录按钮");
+            console.log("oauthLogon() not found, clicking login button instead.");
             clickLoginButton();
         }
     } catch (error) {
-        console.error("执行登录时发生错误:", error);
+        console.error("Error while attempting login:", error);
         // 错误回退：尝试点击按钮
         clickLoginButton();
     }
@@ -403,14 +403,14 @@ function clickLoginButton() {
         }
 
         if (loginBtn) {
-            console.log("找到并点击登录按钮:", loginBtn);
+            console.log("Found and clicking login button:", loginBtn);
             // 触发多种事件确保兼容性
             loginBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
             loginBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
             loginBtn.dispatchEvent(new Event('click', { bubbles: true }));
             if (typeof loginBtn.click === 'function') loginBtn.click();
         } else {
-            console.warn("未找到可用的登录按钮，可能需要用户手动操作");
+            console.warn("No usable login button found; manual action may be required.");
         }
     }, 100);
 }

@@ -52,14 +52,14 @@ function showMessage(message, type = "info", duration = 3000) {
  * 初始化弹窗界面
  */
 function initializePopup() {
-    console.log("开始初始化弹窗界面");
+    console.log("Initializing popup UI...");
     
     // 绑定事件处理器
     const saveButton = document.getElementById('clickme_save');
     const clearButton = document.getElementById('clickme_clear');
     const autoLoginCheckbox = document.getElementById("cb");
     
-    console.log("找到的元素:", {
+    console.log("Elements found:", {
         saveButton: !!saveButton,
         clearButton: !!clearButton,
         autoLoginCheckbox: !!autoLoginCheckbox
@@ -67,26 +67,26 @@ function initializePopup() {
     
     if (saveButton) {
         saveButton.onclick = function() {
-            console.log("保存按钮点击事件触发！");
+            console.log("Save button clicked.");
             saveConfig();
         };
-        console.log("保存按钮事件已绑定，onclick:", saveButton.onclick);
+        console.log("Save button handler attached, onclick:", saveButton.onclick);
     } else {
-        console.error("未找到保存按钮元素");
+        console.error("Save button element not found.");
     }
     
     if (clearButton) {
         clearButton.onclick = clearLogin;
-        console.log("清除按钮事件已绑定");
+        console.log("Clear button handler attached.");
     } else {
-        console.error("未找到清除按钮元素");
+        console.error("Clear button element not found.");
     }
     
     if (autoLoginCheckbox) {
         autoLoginCheckbox.onclick = autoLoginToggleChange;
-        console.log("自动登录开关事件已绑定");
+        console.log("Auto-login toggle handler attached.");
     } else {
-        console.error("未找到自动登录开关元素");
+        console.error("Auto-login toggle element not found.");
     }
     
     // 绑定密码显示/隐藏切换事件
@@ -114,7 +114,7 @@ function initializePopup() {
                 toggle();
             }
         });
-        console.log("密码显示/隐藏切换事件已绑定 (SVG)");
+        console.log("Password visibility toggle bound (SVG).");
     }
     
     // 添加键盘快捷键支持
@@ -141,7 +141,7 @@ function initializePopup() {
     // 加载并显示当前设置
     loadCurrentSettings();
     
-    console.log("弹窗界面初始化完成");
+    console.log("Popup UI initialized.");
 }
 
 // 确保在DOM完全加载后初始化
@@ -158,16 +158,16 @@ if (document.readyState === 'loading') {
 async function loadCurrentSettings() {
     chrome.storage.sync.get(["use_login", "username", "password", "_passwordEncrypted"], async function(items) {
         if (chrome.runtime.lastError) {
-            console.error("加载设置失败:", chrome.runtime.lastError);
+            console.error("Failed to load settings:", chrome.runtime.lastError);
             showMessage("加载设置失败，请重试", "error");
             return;
         }
         
-        console.log("当前设置:", { ...items, password: items.password ? "[已保护]" : undefined });
+        console.log("Current settings:", { ...items, password: items.password ? "[protected]" : undefined });
         
         // 检查是否需要升级密码加密
         if (items.password && items.password !== "N" && !items._passwordEncrypted) {
-            console.log("检测到未加密的密码，正在自动升级...");
+            console.log("Plain password detected, upgrading to encrypted storage...");
             try {
                 await upgradePasswordEncryption(items.password, items.username, items.use_login);
                 showMessage("密码安全升级完成", "info", 2000);
@@ -175,7 +175,7 @@ async function loadCurrentSettings() {
                 setTimeout(() => loadCurrentSettings(), 100);
                 return;
             } catch (error) {
-                console.error("密码升级失败:", error);
+                console.error("Password upgrade failed:", error);
                 showMessage("密码安全升级失败", "warning", 3000);
             }
         }
@@ -192,7 +192,7 @@ async function loadCurrentSettings() {
  */
 async function upgradePasswordEncryption(plainPassword, username, useLogin) {
     try {
-        console.log("开始升级密码加密...");
+        console.log("Upgrading password encryption...");
         const encryptedPassword = await window.passwordCrypto.encryptPassword(plainPassword);
         
         // 更新存储
@@ -211,9 +211,9 @@ async function upgradePasswordEncryption(plainPassword, username, useLogin) {
             });
         });
         
-        console.log("密码加密升级完成");
+        console.log("Password encryption upgrade completed.");
     } catch (error) {
-        console.error("密码升级失败:", error);
+        console.error("Password upgrade failed:", error);
         throw error;
     }
 }
@@ -263,12 +263,12 @@ function updateClearButton(button, enabled) {
  * 保存配置信息（支持密码加密）
  */
 async function saveConfig() {
-    console.log("============ 保存配置函数被调用 ============");
-    console.log("Storage 支持检查:", typeof(Storage));
+    console.log("============ saveConfig invoked ============");
+    console.log("Storage availability:", typeof(Storage));
     
     // 检查浏览器存储支持
     if (typeof(Storage) === "undefined") {
-        console.error("浏览器不支持本地存储");
+        console.error("Browser does not support Web Storage API.");
         showMessage("抱歉，您的浏览器不支持本地存储功能", "error");
         return;
     }
@@ -310,10 +310,10 @@ async function saveConfig() {
     setButtonState(saveButton, true, "保存中...");
 
     try {
-        // 加密密码
-        console.log("正在加密密码...");
+    // 加密密码
+    console.log("Encrypting password...");
         const encryptedPassword = await window.passwordCrypto.encryptPassword(password);
-        console.log("密码加密完成");
+    console.log("Password encrypted.");
 
         // 保存到Chrome存储（密码已加密）
         chrome.storage.sync.set({
@@ -326,10 +326,10 @@ async function saveConfig() {
             setButtonState(saveButton, false, null, "更新");
             
             if (chrome.runtime.lastError) {
-                console.error('保存设置时出错:', chrome.runtime.lastError);
+                console.error('Error while saving settings:', chrome.runtime.lastError);
                 showMessage("保存失败，请重试", "error");
             } else {
-                console.log('设置已成功保存（密码已加密）');
+                console.log('Settings saved successfully (password encrypted).');
                 showMessage("配置保存成功！自动登录已启用（密码已安全加密）", "success");
                 
                 // 更新界面状态
@@ -338,7 +338,7 @@ async function saveConfig() {
         });
         
     } catch (error) {
-        console.error('密码加密失败:', error);
+        console.error('Password encryption failed:', error);
         setButtonState(saveButton, false, null, "保存");
         
         // 提供更详细的错误信息
@@ -382,7 +382,7 @@ function updateUIAfterSave() {
  * 清除登录信息
  */
 function clearLogin() {
-    console.log("开始清除登录信息");
+    console.log("Clearing saved credentials...");
     
     // 确认对话框
     if (!confirm("确定要清除所有保存的登录信息吗？")) {
@@ -401,7 +401,7 @@ function clearLogin() {
         '_passwordEncrypted': false
     }, function() {
         if (chrome.runtime.lastError) {
-            console.error('清除设置时出错:', chrome.runtime.lastError);
+            console.error('Error while clearing settings:', chrome.runtime.lastError);
             showMessage("清除失败，请重试", "error");
             
             // 恢复按钮状态
@@ -409,7 +409,7 @@ function clearLogin() {
                 setButtonState(clearButton, false);
             }
         } else {
-            console.log('登录信息已成功清除');
+            console.log('Credentials cleared successfully.');
             showMessage("登录信息已清除，自动登录已关闭", "info");
             
             // 延迟重新加载页面以更新界面
@@ -428,19 +428,19 @@ function autoLoginToggleChange() {
     if (!checkbox) return;
     
     const isEnabled = checkbox.checked;
-    console.log("自动登录开关切换:", isEnabled);
+    console.log("Auto-login toggled:", isEnabled);
     
     chrome.storage.sync.set({
         'use_login': isEnabled ? "Y" : "N"
     }, function() {
         if (chrome.runtime.lastError) {
-            console.error('切换自动登录状态时出错:', chrome.runtime.lastError);
+            console.error('Error while toggling auto-login:', chrome.runtime.lastError);
             showMessage("设置失败，请重试", "error");
             // 还原开关状态
             checkbox.checked = !isEnabled;
         } else {
             const message = isEnabled ? "自动登录已启用" : "自动登录已关闭";
-            console.log(`设置已保存: ${message}`);
+            console.log(`Setting saved: ${message}`);
             showMessage(message, isEnabled ? "success" : "info");
         }
     });

@@ -10,7 +10,7 @@ try {
 }
 
 // 从Chrome存储中获取用户设置并执行自动登录
-chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypted"], async function(items) {
+chrome.storage.sync.get(['username', 'password', 'use_login'], async function(items) {
     // 检查Chrome存储API调用是否成功
     if (chrome.runtime.lastError) {
         console.error("Failed to get storage items:", chrome.runtime.lastError);
@@ -19,32 +19,27 @@ chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypte
     
     console.log("Auto-login settings:", {
         enabled: items["use_login"],
-        hasUsername: !!items["username"] && items["username"] !== "N",
-        passwordEncrypted: items["_passwordEncrypted"]
+        hasUsername: !!items["username"],
     });
     
     // 检查是否启用自动登录且用户名密码已设置
-    if (items["use_login"] === "Y" && items["username"] !== "N" && items["username"] !== undefined) {
+    if (items["use_login"] === "Y" && items["username"]) {
     console.log("Starting auto-login flow...");
         
         try {
             // 处理密码解密
             let credentials = { ...items };
             
-            if (items["_passwordEncrypted"] && items["password"]) {
+            if (items["password"]) {
                 console.log("Encrypted password detected, decrypting...");
-                
-                // 等待加密工具初始化
                 if (typeof window.passwordCrypto === 'undefined') {
                     window.passwordCrypto = new PasswordCrypto();
                 }
-                
                 credentials["password"] = await window.passwordCrypto.decryptPassword(items["password"]);
                 console.log("Password decrypted successfully.");
-            } else if (items["password"] && items["password"] !== "N") {
-                console.log("Using plaintext password (backward compatibility).");
-                // 向后兼容：如果密码未加密，直接使用
-                credentials["password"] = items["password"];
+            } else {
+                console.warn("No password found in storage; aborting auto-login.");
+                return;
             }
             
             initAutoLogin(credentials);

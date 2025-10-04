@@ -19,6 +19,25 @@ function setButtonState(button, loading, loadingText, normalText = null) {
 }
 
 /**
+ * 确保密码加密工具已初始化
+ */
+function ensurePasswordCrypto() {
+    try {
+        if (typeof window.passwordCrypto === 'undefined') {
+            // WebCrypto 可用性简单检查
+            if (typeof crypto === 'undefined' || typeof crypto.subtle === 'undefined') {
+                throw new Error('WebCrypto unavailable');
+            }
+            if (typeof PasswordCrypto === 'function') {
+                window.passwordCrypto = new PasswordCrypto();
+            }
+        }
+    } catch (e) {
+        console.error('Failed to initialize PasswordCrypto:', e);
+    }
+}
+
+/**
  * 显示状态消息（增强版）
  * @param {string} message - 要显示的消息
  * @param {string} type - 消息类型: success, error, warning, info
@@ -156,30 +175,13 @@ if (document.readyState === 'loading') {
  * 加载当前设置并更新UI（支持密码解密显示和自动升级）
  */
 async function loadCurrentSettings() {
-    chrome.storage.sync.get(["use_login", "username", "password", "_passwordEncrypted"], async function(items) {
+    chrome.storage.sync.get(["use_login", "username"], async function(items) {
         if (chrome.runtime.lastError) {
             console.error("Failed to load settings:", chrome.runtime.lastError);
             showMessage("加载设置失败，请重试", "error");
             return;
         }
-        
-        console.log("Current settings:", { ...items, password: items.password ? "[protected]" : undefined });
-        
-        // 检查是否需要升级密码加密
-        if (items.password && items.password !== "N" && !items._passwordEncrypted) {
-            console.log("Plain password detected, upgrading to encrypted storage...");
-            try {
-                await upgradePasswordEncryption(items.password, items.username, items.use_login);
-                showMessage("密码安全升级完成", "info", 2000);
-                // 重新加载设置
-                setTimeout(() => loadCurrentSettings(), 100);
-                return;
-            } catch (error) {
-                console.error("Password upgrade failed:", error);
-                showMessage("密码安全升级失败", "warning", 3000);
-            }
-        }
-        
+        console.log("Current settings:", { use_login: items.use_login, username: items.username });
         updateUIBasedOnSettings(items);
     });
 }
@@ -190,33 +192,7 @@ async function loadCurrentSettings() {
  * @param {string} username - 用户名
  * @param {string} useLogin - 登录状态
  */
-async function upgradePasswordEncryption(plainPassword, username, useLogin) {
-    try {
-        console.log("Upgrading password encryption...");
-        const encryptedPassword = await window.passwordCrypto.encryptPassword(plainPassword);
-        
-        // 更新存储
-        await new Promise((resolve, reject) => {
-            chrome.storage.sync.set({
-                'username': username,
-                'password': encryptedPassword,
-                'use_login': useLogin,
-                '_passwordEncrypted': true
-            }, function() {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                } else {
-                    resolve();
-                }
-            });
-        });
-        
-        console.log("Password encryption upgrade completed.");
-    } catch (error) {
-        console.error("Password upgrade failed:", error);
-        throw error;
-    }
-}
+// 取消历史版本明文密码升级逻辑（本版本从零开始，不存在升级场景）
 
 /**
  * 根据设置更新用户界面
@@ -229,7 +205,7 @@ function updateUIBasedOnSettings(settings) {
     const autoLoginCheckbox = document.getElementById("cb");
     
     // 更新用户名显示和保存按钮文字
-    if (settings["username"] && settings["username"] !== "N") {
+    if (settings["username"]) {
         if (usernameInput) usernameInput.value = settings["username"];
         if (saveButton) saveButton.value = "更新";
         
@@ -312,6 +288,7 @@ async function saveConfig() {
     try {
     // 加密密码
     console.log("Encrypting password...");
+        ensurePasswordCrypto();
         const encryptedPassword = await window.passwordCrypto.encryptPassword(password);
     console.log("Password encrypted.");
 
@@ -319,8 +296,7 @@ async function saveConfig() {
         chrome.storage.sync.set({
             'username': username, 
             'password': encryptedPassword, 
-            'use_login': "Y",
-            '_passwordEncrypted': true // 标记密码已加密
+            'use_login': "Y"
         }, function() {
             // 恢复按钮状态
             setButtonState(saveButton, false, null, "更新");
@@ -394,29 +370,22 @@ function clearLogin() {
     // 显示清除中状态
     setButtonState(clearButton, true, "清除中...");
     
-    chrome.storage.sync.set({
-        'username': "N", 
-        'password': "N", 
-        'use_login': "N",
-        '_passwordEncrypted': false
-    }, function() {
+    // 仅保留 use_login 状态为关闭，并移除用户名/密码
+    chrome.storage.sync.set({ 'use_login': "N" }, function() {
         if (chrome.runtime.lastError) {
-            console.error('Error while clearing settings:', chrome.runtime.lastError);
-            showMessage("清除失败，请重试", "error");
-            
-            // 恢复按钮状态
-            if (clearButton) {
-                setButtonState(clearButton, false);
+            console.error('Error while updating use_login:', chrome.runtime.lastError);
+        }
+        chrome.storage.sync.remove(['username', 'password'], function() {
+            if (chrome.runtime.lastError) {
+                console.error('Error while removing credentials:', chrome.runtime.lastError);
+                showMessage("清除失败，请重试", "error");
+                if (clearButton) setButtonState(clearButton, false);
+                return;
             }
-        } else {
             console.log('Credentials cleared successfully.');
             showMessage("登录信息已清除，自动登录已关闭", "info");
-            
-            // 延迟重新加载页面以更新界面
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        }
+            setTimeout(() => { location.reload(); }, 800);
+        });
     });
 }
 

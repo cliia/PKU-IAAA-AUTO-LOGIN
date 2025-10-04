@@ -1,16 +1,4 @@
 /**
- * PKU IAAA 自动登录插件弹窗脚本
- * 版本: 2.0
- * 功能：管理用户凭据和自动登录设置
- * 兼容: Manifest V3
- * 安全特性：使用 AES-GCM 加密存储密码
- */
-
-console.log("PKU IAAA 弹窗脚本已加载");
-
-// 加密工具实例将由 crypto-utils.js 提供
-
-/**
  * 通用的按钮状态管理函数
  * @param {HTMLElement} button - 按钮元素
  * @param {boolean} loading - 是否处于加载状态
@@ -103,15 +91,30 @@ function initializePopup() {
     
     // 绑定密码显示/隐藏切换事件
     const togglePassword = document.getElementById('togglePassword');
+    const iconEye = document.getElementById('iconEye');
+    const iconEyeSlash = document.getElementById('iconEyeSlash');
     const passwordInput = document.getElementById('passwd');
-    if (togglePassword && passwordInput) {
-        togglePassword.onclick = function() {
+    if (togglePassword && iconEye && iconEyeSlash && passwordInput) {
+        const toggle = () => {
             const isPassword = passwordInput.type === 'password';
             passwordInput.type = isPassword ? 'text' : 'password';
-            togglePassword.textContent = isPassword ? '🙈' : '👁';
+            // 切换 SVG 显示
+            iconEye.style.display = isPassword ? 'none' : '';
+            iconEyeSlash.style.display = isPassword ? '' : 'none';
+            // 无障碍提示
             togglePassword.title = isPassword ? '隐藏密码' : '显示密码';
+            togglePassword.setAttribute('aria-label', isPassword ? '隐藏密码' : '显示密码');
         };
-        console.log("密码显示/隐藏切换事件已绑定");
+
+        togglePassword.addEventListener('click', toggle);
+        // 键盘可访问：Enter/Space 触发
+        togglePassword.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                toggle();
+            }
+        });
+        console.log("密码显示/隐藏切换事件已绑定 (SVG)");
     }
     
     // 添加键盘快捷键支持
@@ -403,8 +406,7 @@ function clearLogin() {
             
             // 恢复按钮状态
             if (clearButton) {
-                clearButton.disabled = false;
-                clearButton.value = originalValue;
+                setButtonState(clearButton, false);
             }
         } else {
             console.log('登录信息已成功清除');
@@ -443,30 +445,3 @@ function autoLoginToggleChange() {
         }
     });
 }
-
-/**
- * 显示状态消息
- * @param {string} message - 要显示的消息
- * @param {string} type - 消息类型: success, error, warning, info
- */
-function showMessage(message, type = "info") {
-    const resultDiv = document.getElementById("result");
-    
-    // 设置消息样式
-    const styles = {
-        success: "background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;",
-        error: "background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;",
-        warning: "background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7;",
-        info: "background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;"
-    };
-    
-    resultDiv.style.cssText = styles[type] || styles.info;
-    resultDiv.innerHTML = message;
-    
-    // 3秒后清除消息
-    setTimeout(() => {
-        resultDiv.innerHTML = "";
-        resultDiv.style.cssText = "";
-    }, 3000);
-}
-

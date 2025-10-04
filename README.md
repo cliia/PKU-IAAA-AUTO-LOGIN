@@ -3,7 +3,7 @@
 ![演示截图](pic/screenshot.png)
 
 ## 简介
-```(IAAA)自动登录浏览器插件，支持自动填写用户名密码并处理多种认证方式，让你轻松访问需要IAAA认证的网站。
+(IAAA)自动登录浏览器插件，支持自动填写用户名密码并处理多种认证方式，让你轻松访问需要IAAA认证的网站。
 
 ### 主要特性
 
@@ -64,7 +64,7 @@ PKU-IAAA-AUTO-LOGIN/
 ├── iaaa.js                # 核心自动登录脚本
 ├── crypto-utils.js        # 密码加密工具
 ├── jquery-3.7.1.min.js    # jQuery库
-├── bootstrap.css          # Bootstrap样式
+├── bootstrap.min.css      # Bootstrap样式（压缩版）
 ├── Toggle-Switch.css      # 开关组件样式
 ├── icon*.png              # 扩展图标
 └── pic/                   # 文档图片
@@ -84,6 +84,12 @@ PKU-IAAA-AUTO-LOGIN/
 - 本插件已全面升级到 Manifest V3，确保长期兼容性
 - 推荐使用最新版本的 Chrome 浏览器以获得最佳体验
 - 旧版本浏览器可能不支持某些新特性
+
+### 隐私与加密说明
+
+- 插件使用 AES-GCM(256位) 加密存储密码，密钥保存在浏览器的本地存储中（chrome.storage.local），不会随账号同步到其它设备。
+- 为了安全性考虑，加密后的密码存放在 chrome.storage.sync 中，便于配置跨设备同步，但由于密钥不随之同步，换到新设备后将无法解密，需要在该设备上重新保存一次密码。
+- 如需彻底移除本地敏感信息，请在弹窗中点击“清除”，并考虑通过浏览器设置清理“站点数据/扩展数据”。
 
 ## 更新日志
 

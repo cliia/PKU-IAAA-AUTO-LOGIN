@@ -1,14 +1,3 @@
-/**
- * PKU IAAA 密码加密工具
- * 版本: 2.0
- * 功能：提供安全的密码加密和解密功能
- * 使用: Web Crypto API with AES-GCM
- */
-
-/**
- * 密码加密工具类
- * 使用 Web Crypto API 提供安全的密码加密和解密功能
- */
 class PasswordCrypto {
     constructor() {
         this.algorithm = 'AES-GCM';

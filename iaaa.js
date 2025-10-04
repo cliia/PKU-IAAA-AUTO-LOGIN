@@ -1,12 +1,13 @@
-
-/**
- * PKU IAAA 自动登录脚本
- * 版本: 2.0
- * 功能: 自动填写用户名密码，处理多种认证方式（普通登录、短信验证、OTP验证）
- * 兼容: Manifest V3
- */
-
 console.log("PKU IAAA 自动登录脚本已加载");
+
+// 设置 jQuery 全局 AJAX 配置（超时与不缓存），避免长时间挂起
+try {
+    if (typeof $ !== 'undefined' && typeof $.ajaxSetup === 'function') {
+        $.ajaxSetup({ timeout: 8000, cache: false });
+    }
+} catch (e) {
+    console.warn('设置 AJAX 超时失败: ', e);
+}
 
 // 从Chrome存储中获取用户设置并执行自动登录
 chrome.storage.sync.get(['username', 'password', "use_login", "_passwordEncrypted"], async function(items) {
@@ -277,7 +278,22 @@ function handleSMSAuthentication() {
             console.log("自动发送短信验证码");
             window.sendSMSCode();
         } else {
-            console.warn("未找到sendSMSCode函数");
+            console.warn("未找到sendSMSCode函数，尝试点击页面上的发送验证码按钮");
+            // 回退：尝试点击“发送验证码/获取验证码”按钮
+            const candidates = Array.from(document.querySelectorAll('button, input[type="button"], a, .btn'));
+            const sendBtn = candidates.find(el => {
+                const text = (el.innerText || el.value || '').trim();
+                return /发\s*送\s*验\s*证\s*码|获\s*取\s*验\s*证\s*码|send\s*code|get\s*code/i.test(text);
+            });
+            if (sendBtn) {
+                console.log('点击发送验证码按钮:', sendBtn);
+                sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                sendBtn.dispatchEvent(new Event('click', { bubbles: true }));
+                if (typeof sendBtn.click === 'function') sendBtn.click();
+            } else {
+                console.warn('未找到可用的发送验证码按钮');
+            }
         }
     } catch (error) {
         console.error("发送短信验证码失败:", error);
@@ -349,30 +365,52 @@ function clickLoginButton() {
         // 按优先级查找登录按钮
         const buttonSelectors = [
             "#logon_button",
+            'button[type="submit"]',
             'input[type="submit"]',
-            'button[type="submit"]', 
             '.btn-primary',
-            'input[value*="登录"]',
-            'button[text*="登录"]'
+            'input[value*="登录"]'
         ];
-        
+
+        const isVisible = (el) => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            const rect = el.getBoundingClientRect();
+            return (
+                style.display !== 'none' &&
+                style.visibility !== 'hidden' &&
+                style.opacity !== '0' &&
+                rect.width > 0 && rect.height > 0
+            );
+        };
+
         let loginBtn = null;
         for (const selector of buttonSelectors) {
-            loginBtn = document.querySelector(selector);
-            if (loginBtn && !loginBtn.disabled && loginBtn.style.display !== 'none') {
+            const candidate = document.querySelector(selector);
+            if (candidate && !candidate.disabled && isVisible(candidate)) {
+                loginBtn = candidate;
                 break;
             }
         }
-        
+
+        // 文本内容匹配回退
+        if (!loginBtn) {
+            const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], .btn'));
+            loginBtn = allButtons.find(el => {
+                if (el.disabled || !isVisible(el)) return false;
+                const text = (el.innerText || el.value || '').trim();
+                return /登\s*录|log\s*in/i.test(text);
+            }) || null;
+        }
+
         if (loginBtn) {
             console.log("找到并点击登录按钮:", loginBtn);
             // 触发多种事件确保兼容性
+            loginBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            loginBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
             loginBtn.dispatchEvent(new Event('click', { bubbles: true }));
-            loginBtn.click();
+            if (typeof loginBtn.click === 'function') loginBtn.click();
         } else {
             console.warn("未找到可用的登录按钮，可能需要用户手动操作");
         }
     }, 100);
 }
-
-

@@ -13,6 +13,9 @@
 <body style="width: 250px; padding: 4%; background-color: #EEEEEE;"> 
     <h4 style="margin-left: 3px; color: #333; font-weight: bold;">PKU IAAA 自动登录</h4>
 
+    <!-- 状态指示器 -->
+    <div id="status-indicator" style="display: none; padding: 5px; margin-bottom: 10px; border-radius: 4px; font-size: 12px; text-align: center;"></div>
+
     <table style="width: 100%; margin-bottom: 10px;">
         <tbody>
             <tr>
@@ -27,7 +30,7 @@
                            autocomplete="username">
                 </td>
             </tr>
-            <tr>
+            <tr id="password-row">
                 <td style="width: 30%; padding: 5px 0; font-weight: bold;">密码:</td>
                 <td style="width: 70%;">
                     <div style="position: relative; width: 95%; margin: 2px 2% 0 2%;">
@@ -58,6 +61,17 @@
                             </svg>
                         </span>
                     </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 30%; padding: 5px 0; font-weight: bold;">主密码:</td>
+                <td style="width: 70%;">
+                    <input class="form-control"
+                           style="height: 25px; margin: 0 2% 2px 2%; width: 95%;"
+                           id="master_password"
+                           type="password"
+                           placeholder="用于跨设备同步解锁"
+                           autocomplete="off">
                 </td>
             </tr>
         </tbody>

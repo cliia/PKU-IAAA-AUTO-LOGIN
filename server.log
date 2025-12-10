@@ -1,0 +1,15 @@
+127.0.0.1 - - [10/Dec/2025 11:16:56] "GET /popup.html HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:56] "GET /popup.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:56] "GET /bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:56] "GET /Toggle-Switch.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:56] "GET /crypto-utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:57] "GET /popup.html HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:57] "GET /popup.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:57] "GET /bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:57] "GET /crypto-utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:57] "GET /Toggle-Switch.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:58] "GET /popup.html HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:58] "GET /crypto-utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:58] "GET /bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:58] "GET /Toggle-Switch.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Dec/2025 11:16:58] "GET /popup.js HTTP/1.1" 200 -

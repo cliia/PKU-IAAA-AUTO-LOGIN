@@ -1,8 +1,8 @@
 {
    "manifest_version": 3,
    "name": "PKU IAAA 自动登录",
-   "version": "2.1",
-   "description": "北京大学统一身份认证(IAAA)自动登录插件，支持普通登录、短信验证、OTP认证等多种方式，只需保存一次账号信息即可享受便捷的自动登录体验",
+   "version": "2.2",
+   "description": "北京大学统一身份认证(IAAA)自动登录插件，支持跨设备同步（主密码加密）、短信验证、OTP认证等多种方式",
    "author": "PKU IAAA Auto Login Team",
    "homepage_url": "https://github.com/cliia/PKU-IAAA-AUTO-LOGIN",
    

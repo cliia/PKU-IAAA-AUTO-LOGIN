@@ -54,7 +54,8 @@ chrome.storage.sync.get(['username', 'encrypted_password', 'salt', 'iv', 'use_lo
                  // 根据用户需求"处理旧密码太麻烦了"，这里我们主要关注新逻辑
                  // 但为了防止旧版本直接崩坏，如果检测到纯文本或旧版加密，可以尝试直接使用（如果它是明文）或者提示更新
                  // 由于旧版代码也是加密的，且密钥在本地，如果用户是从旧版升级上来，cached_key可能不存在，
-                 // 这里简单处理：如果无法解密，就不填密码。
+                 // 这里简单处理：直接使用旧版密码，以维持兼容性
+                 password = syncItems.password;
             }
             else {
                 console.log("Missing decryption material (Key or Password). Device might be locked.");

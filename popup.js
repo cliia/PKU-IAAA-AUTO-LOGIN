@@ -44,7 +44,7 @@ function showMessage(message, type = "info", duration = 3000) {
     };
     
     resultDiv.style.cssText = styles[type] || styles.info;
-    resultDiv.innerHTML = message;
+    resultDiv.textContent = message;
     
     if (duration > 0) {
         setTimeout(() => {
@@ -308,6 +308,12 @@ async function handleSave() {
 
     if (!masterPassword) {
         showMessage("请设置主密码（用于跨设备同步）", "warning");
+        masterInput.focus();
+        return;
+    }
+
+    if (masterPassword.length < 6) {
+        showMessage("主密码长度不能少于6位", "warning");
         masterInput.focus();
         return;
     }

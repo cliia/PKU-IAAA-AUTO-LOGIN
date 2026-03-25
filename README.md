@@ -1,71 +1,136 @@
-# PKU IAAA 自动登录插件
+# PKU IAAA 自动登录
 
-## 简介
-一款用于北京大学统一身份认证（IAAA）的自动登录扩展：自动填写用户名/密码，按页面提示处理普通登录、短信验证与 OTP 认证。
+面向北京大学统一身份认证页面的 Chromium 扩展。插件会在 `iaaa.pku.edu.cn` 页面内自动填写用户名和密码，并按页面实际状态处理普通登录、短信验证码和 OTP 场景。
+
+## 版本说明
+
+- 当前版本：`3.0.0`
+- 技术栈：`TypeScript + Vite + Vitest + ESLint`
+- 浏览器范围：Chrome、Edge 及其他现代 Chromium 浏览器
+- 存储结构：v3 使用全新的 `settings` / `device` schema
+
+> 注意：v3 不兼容旧版分散存储结构，不会自动迁移旧数据。升级后请重新配置，或在弹窗中先执行“清除数据”。
+
+## 功能
+
+- 保存用户名、IAAA 密码与主密码
+- 使用 `PBKDF2-SHA-256 + AES-GCM-256` 加密同步密码
+- 仅在本地缓存解锁后的 JWK，不上传主密码
+- 支持三态弹窗：`setup`、`locked`、`ready`
+- 支持自动登录开关、清除配置、锁定后重新解锁
+- 支持 IAAA 普通登录、短信验证、OTP、OTP 未绑定提示
 
 ## 安装与使用
 
-### 安装方法
+### 1. 构建扩展
 
-- 下载本项目到本地，并解压
-- 打开Chrome/Edge浏览器，进入 `chrome://extensions/`
-- 开启"开发者模式"
-- 点击"加载已解压的扩展程序"，选择项目文件夹
-
-### 使用指南
-
-#### 初次配置
-1. 点击浏览器工具栏中的北大Logo图标
-2. 在弹出窗口中输入你的北大账号用户名和密码
-3. **设置主密码**（用于加密数据及跨设备同步）
-4. 点击"保存"按钮
-5. 确保"自动登录"开关为开启状态
-
-#### 功能说明
-- 保存/更新：保存用户名、密码及主密码，启用自动登录
-- 解锁：在跨设备同步或清理缓存后，输入主密码解锁自动登录
-- 清除：清除所有保存的登录信息（包括云端同步数据）并关闭自动登录
-- 自动登录开关：在不删除凭据的情况下启用/禁用自动登录
-
-#### 使用流程
-1. 配置完成后，访问任何需要IAAA认证的网站
-2. 插件会自动填写用户名和密码
-3. 根据网站要求的认证方式自动处理：
-   - 普通登录：直接完成登录
-   - 短信验证：自动发送验证码，等待用户输入
-   - OTP认证：显示OTP输入框，等待用户输入
-4. 按提示完成剩余步骤即可成功登录
-
-## 项目结构
-```
-PKU-IAAA-AUTO-LOGIN/
-├── manifest.json          # 扩展清单文件
-├── popup.html             # 弹窗界面
-├── popup.js               # 弹窗逻辑
-├── iaaa.js                # 核心自动登录脚本
-├── crypto-utils.js        # 密码加密工具
-├── jquery-3.7.1.min.js    # jQuery库
-├── bootstrap.min.css      # Bootstrap样式
-├── Toggle-Switch.css      # 开关组件样式
-└── icon*.png              # 扩展图标
+```bash
+npm install
+npm run build
 ```
 
-## 支持的网站
-- 北京大学统一身份认证 (iaaa.pku.edu.cn)
+构建完成后，浏览器可加载的扩展目录为 `dist/`。
 
-## 浏览器兼容性
-- **Chrome 88+** (支持 Manifest V3)
-- **Microsoft Edge 88+** (支持 Manifest V3)
-- **其他基于 Chromium 的现代浏览器**
+### 2. 加载到浏览器
 
-提示：推荐使用最新版 Chromium 系浏览器以获得最佳体验。
+1. 打开 `chrome://extensions/` 或 `edge://extensions/`
+2. 开启“开发者模式”
+3. 点击“加载已解压的扩展程序”
+4. 选择项目下的 `dist/` 目录
 
-## 隐私与加密
-- **新版加密机制**：使用 **主密码 (Master Password)** 派生密钥，配合 AES-GCM(256) 算法对校园网密码进行加密。
-- **跨设备同步**：加密后的密码存储在 `chrome.storage.sync` 中，可跟随 Google 账号同步到其他设备。
-- **安全性**：解密密钥由主密码实时生成，仅缓存在本机内存/本地存储中，**绝不会上传或同步**。
-- **重新认证**：由于采用了新的加密方式，**更新插件后请务必重新输入校园网密码并设置主密码**。在新的设备上使用时，只需输入主密码即可解锁。
-- **彻底移除**：点击“清除”，并可在浏览器设置中清理“站点数据/扩展数据”。
+### 3. 首次配置
 
-## 参考
-本项目基于 "Cyberoam Auto Login" 开发
+1. 点击浏览器工具栏中的扩展图标
+2. 输入学号、IAAA 密码和主密码
+3. 按需开启或关闭“自动登录”
+4. 点击“保存配置”
+
+首次保存后，本机会进入 `ready` 状态，可直接自动登录；其他设备只会同步密文，需要重新输入主密码解锁。
+
+## 开发
+
+### 常用脚本
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+### 项目结构
+
+```text
+.
+├── manifest.json
+├── popup.html
+├── src
+│   ├── content
+│   │   ├── index.ts
+│   │   └── runner.ts
+│   ├── popup
+│   │   ├── controller.ts
+│   │   ├── main.ts
+│   │   ├── styles.css
+│   │   └── template.ts
+│   └── shared
+│       ├── constants.ts
+│       ├── crypto.ts
+│       ├── selectors.ts
+│       ├── storage.ts
+│       └── types.ts
+├── test
+│   ├── fixtures
+│   ├── content.test.ts
+│   ├── crypto.test.ts
+│   ├── popup.test.ts
+│   └── storage.test.ts
+└── scripts
+    └── build-extension.mjs
+```
+
+## 存储与安全模型
+
+- `chrome.storage.sync['settings']`
+
+```ts
+{
+  version: 1,
+  username: string,
+  autoLoginEnabled: boolean,
+  encryptedPassword: string,
+  salt: string,
+  iv: string
+}
+```
+
+- `chrome.storage.local['device']`
+
+```ts
+{
+  cachedKeyJwk: JsonWebKey | null
+}
+```
+
+说明：
+
+- 真实密码只以密文形式进入同步存储
+- 主密码只用于派生密钥，不会写入浏览器存储
+- 本地缓存的是解锁后的密钥 JWK，用于当前设备后续自动登录
+- 若本地缓存失效，弹窗会自动回到 `locked` 状态
+
+## 自动化测试覆盖
+
+- 加密、解密、主密码验证
+- 新版存储结构读写与旧版数据识别
+- Popup 的首次配置、解锁、自动登录切换、清除数据
+- Content script 的普通登录、短信验证码、OTP、OTP 未绑定、探测失败回退、未启用/未解锁跳过
+
+## 已知边界
+
+- 插件依赖 IAAA 当前页面的 DOM 结构和页面内函数，例如 `oauthLogon()`、`sendSMSCode()`
+- 如果 IAAA 页面后续改版，优先修改 `src/shared/selectors.ts` 和 `src/content/runner.ts` 中的适配逻辑
+- 当前不提供 Firefox 兼容层，也不包含后台脚本或云端服务
+
+## 许可证
+
+本项目采用 [MIT License](./LICENSE)。

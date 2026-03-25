@@ -1,49 +1,37 @@
 {
-   "manifest_version": 3,
-   "name": "PKU IAAA 自动登录",
-   "version": "2.2",
-   "description": "北京大学统一身份认证(IAAA)自动登录插件，支持跨设备同步（主密码加密）、短信验证、OTP认证等多种方式",
-   "author": "PKU IAAA Auto Login Team",
-   "homepage_url": "https://github.com/cliia/PKU-IAAA-AUTO-LOGIN",
-   
-   "action": {
-      "default_icon": {
-         "16": "icon16.png",
-         "48": "icon48.png",
-         "128": "icon128.png"
-      },
-      "default_popup": "popup.html",
-      "default_title": "PKU IAAA 自动登录设置"
-   },
-   
-   "icons": {
+  "manifest_version": 3,
+  "name": "PKU IAAA 自动登录",
+  "version": "3.0.0",
+  "description": "北京大学统一身份认证(IAAA)自动登录扩展，支持主密码加密、短信验证与 OTP 场景",
+  "author": "PKU IAAA Auto Login Team",
+  "homepage_url": "https://github.com/cliia/PKU-IAAA-AUTO-LOGIN",
+  "minimum_chrome_version": "88",
+  "permissions": ["storage"],
+  "host_permissions": ["https://iaaa.pku.edu.cn/*"],
+  "action": {
+    "default_title": "PKU IAAA 自动登录",
+    "default_popup": "popup.html",
+    "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",
       "128": "icon128.png"
-   },
-   
-   "content_scripts": [
-      {
-         "js": ["crypto-utils.js", "jquery-3.7.1.min.js", "iaaa.js"],
-         "matches": ["https://iaaa.pku.edu.cn/*"],
-         "run_at": "document_end",
-         "all_frames": false
-      }
-   ],
-   
-   "permissions": [
-      "storage"
-   ],
-   
-   "host_permissions": [
-      "https://iaaa.pku.edu.cn/*"
-   ],
-   
-   "content_security_policy": {
-      "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-   },
-   
-   "minimum_chrome_version": "88",
-   
-   "update_url": "https://clients2.google.com/service/update2/crx"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://iaaa.pku.edu.cn/*"],
+      "js": ["assets/content.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self'; img-src 'self' data:"
+  },
+  "update_url": "https://clients2.google.com/service/update2/crx"
 }
